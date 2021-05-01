@@ -40,7 +40,12 @@ namespace osu.Framework.Graphics.Containers {
 
 		public FlexSpacing Spacing = FlexSpacing.Start;
 		public FlexDirection Direction = FlexDirection.Row;
-		// TODO wrapping
+		public FlexWrap Wrap = FlexWrap.NoWrap;
+
+		new public Axes AutoSizeAxes {
+			get => base.AutoSizeAxes;
+			set => base.AutoSizeAxes = value;
+		}
 
 		internal class ItemData {
 			public ItemData ( FlexboxElement element ) {
@@ -59,11 +64,60 @@ namespace osu.Framework.Graphics.Containers {
 		protected override void Update () {
 			base.Update();
 
+			if ( Wrap is FlexWrap.NoWrap ) {
+				spaceLine( childData.Values );
+			}
+			else {
+				List<List<ItemData>> lines = new();
+				List<ItemData> line = new();
+				lines.Add( line );
+				double lineSize = 0;
+				bool isHorizontal = Direction is FlexDirection.Row;
+				double totalSpace = isHorizontal ? DrawWidth : DrawHeight;
+
+				foreach ( var i in childData.Values ) {
+					if ( isHorizontal && !i.Source.Height.IsAbsolute ) {
+						throw new InvalidOperationException( $"Cannot have a horizontally wrapping flexbox with an item that scales vertically (yet). All the items need to have an absolute {nameof(FlexboxElement)}.{nameof(FlexboxElement.Height)}" );
+					}
+					else if ( !isHorizontal && !i.Source.Width.IsAbsolute ) {
+						throw new InvalidOperationException( $"Cannot have a vertically wrapping flexbox with an item that scales horozontally (yet). All the items need to have an absolute {nameof(FlexboxElement)}.{nameof(FlexboxElement.Width)}" );
+					}
+
+					var size = ( i.Source.Basis.IsAbsolute ? i.Source.Basis.Amout : ( totalSpace * i.Source.Basis.Amout ) ) + i.Drawable.Margin.Left + i.Drawable.Margin.Right;
+					if ( line.Count != 0 && lineSize + size > totalSpace ) {
+						line = new();
+						lines.Add( line );
+						line.Add( i );
+						lineSize = size;
+					}
+					else {
+						line.Add( i );
+						lineSize += size;
+					}
+				}
+
+				double lineOffset = 0;
+				foreach ( var _line in lines ) {
+					spaceLine( _line );
+					foreach ( var item in _line ) {
+						if ( isHorizontal ) {
+							item.Drawable.Y = (float)lineOffset;
+						}
+						else {
+							item.Drawable.X = (float)lineOffset;
+						}
+					}
+					lineOffset += _line.Max( x => isHorizontal ? x.Drawable.Height : x.Drawable.Width );
+				}
+			}
+		}
+
+		void spaceLine ( IEnumerable<ItemData> items ) {
 			bool isHorizontal = Direction is FlexDirection.Row;
 
 			double totalSpace = isHorizontal ? DrawWidth : DrawHeight;
 			double takenSpace = 0;
-			foreach ( var i in childData.Values ) {
+			foreach ( var i in items ) {
 				i.Drawable.Anchor = Anchor.TopLeft;
 				i.Drawable.Origin = Anchor.TopLeft;
 				if ( isHorizontal ) {
@@ -83,7 +137,7 @@ namespace osu.Framework.Graphics.Containers {
 
 			if ( totalSpace > takenSpace ) {
 				while ( totalSpace > takenSpace ) {
-					var growable = childData.Values.Where( x => x.Source.Grow > 0 && x.Size < x.MaxSize ).ToArray();
+					var growable = items.Where( x => x.Source.Grow > 0 && x.Size < x.MaxSize ).ToArray();
 					if ( !growable.Any() ) break;
 
 					var freeSpace = totalSpace - takenSpace;
@@ -101,12 +155,12 @@ namespace osu.Framework.Graphics.Containers {
 						i.Size += freeSpace * ( i.Source.Grow / totalGrow ) * limit;
 					}
 
-					takenSpace = childData.Values.Sum( x => x.Size );
+					takenSpace = items.Sum( x => x.Size );
 				}
 			}
 			else if ( totalSpace < takenSpace ) {
 				while ( totalSpace < takenSpace ) {
-					var shrinkable = childData.Values.Where( x => x.Source.Shrink > 0 && x.Size > x.MinSize ).ToArray();
+					var shrinkable = items.Where( x => x.Source.Shrink > 0 && x.Size > x.MinSize ).ToArray();
 					if ( !shrinkable.Any() ) break;
 
 					var excessSpace = takenSpace - totalSpace;
@@ -124,27 +178,26 @@ namespace osu.Framework.Graphics.Containers {
 						i.Size -= excessSpace * ( i.Source.Shrink * i.Size / totalScaledShrink ) * limit;
 					}
 
-					takenSpace = childData.Values.Sum( x => x.Size );
+					takenSpace = items.Sum( x => x.Size );
 				}
 			}
 
-			double remainingSpace = totalSpace - takenSpace;
-			SpaceItems( totalSpace, remainingSpace );
+			spaceItems( totalSpace - takenSpace, items );
 			if ( isHorizontal ) {
-				foreach ( var i in childData.Values ) {
+				foreach ( var i in items ) {
 					i.Drawable.Width = (float)i.Size - i.Drawable.Margin.Left - i.Drawable.Margin.Right;
 					i.Drawable.X = (float)i.Position;
 				}
 			}
 			else {
-				foreach ( var i in childData.Values ) {
+				foreach ( var i in items ) {
 					i.Drawable.Height = (float)i.Size - i.Drawable.Margin.Top - i.Drawable.Margin.Bottom;
 					i.Drawable.Y = (float)i.Position;
 				}
 			}
 
 			if ( isHorizontal ) {
-				foreach ( var i in childData.Values ) {
+				foreach ( var i in items ) {
 					i.Drawable.Height = (float)Math.Clamp(
 						i.Source.Height.IsAbsolute ? i.Source.Height.Amout : ( i.Source.Height.Amout * DrawHeight ),
 						i.Source.MinHeight.IsAbsolute ? i.Source.MinHeight.Amout : ( i.Source.MinHeight.Amout * DrawHeight ),
@@ -154,7 +207,7 @@ namespace osu.Framework.Graphics.Containers {
 				}
 			}
 			else {
-				foreach ( var i in childData.Values ) {
+				foreach ( var i in items ) {
 					i.Drawable.Width = (float)Math.Clamp(
 						i.Source.Width.IsAbsolute ? i.Source.Width.Amout : ( i.Source.Width.Amout * DrawWidth ),
 						i.Source.MinWidth.IsAbsolute ? i.Source.MinWidth.Amout : ( i.Source.MinWidth.Amout * DrawWidth ),
@@ -165,29 +218,31 @@ namespace osu.Framework.Graphics.Containers {
 			}
 		}
 
-		void SpaceItems ( double totalSpace, double remainingSpace ) {
+		void spaceItems ( double remainingSpace, IEnumerable<ItemData> items ) {
+			var count = items.Count();
+
 			double pos = 0;
 			double gap = 0;
 
 			if ( Spacing is FlexSpacing.End ) {
 				pos = remainingSpace;
 			}
-			else if( Spacing is FlexSpacing.Centre || childData.Count == 1 ) {
+			else if( Spacing is FlexSpacing.Centre || count == 1 ) {
 				pos = remainingSpace / 2;
 			}
 			else if ( Spacing is FlexSpacing.SpaceBetween ) {
-				gap = remainingSpace / ( childData.Count - 1 );
+				gap = remainingSpace / ( count - 1 );
 			}
 			else if ( Spacing is FlexSpacing.SpaceEvenly ) {
-				gap = remainingSpace / ( childData.Count + 1 );
+				gap = remainingSpace / ( count + 1 );
 				pos = gap;
 			}
 			else if ( Spacing is FlexSpacing.SpaceAround ) {
-				gap = remainingSpace / childData.Count;
+				gap = remainingSpace / count;
 				pos = gap / 2;
 			}
 
-			foreach ( var i in childData.Values ) {
+			foreach ( var i in items ) {
 				i.Position = pos;
 				pos += i.Size + gap;
 			}

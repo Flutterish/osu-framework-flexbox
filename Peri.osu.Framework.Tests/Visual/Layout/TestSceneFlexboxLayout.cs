@@ -29,28 +29,64 @@ namespace osu.Framework.Tests.Visual.Layout {
 					},
 					flexbox = new Flexbox {
 						Direction = FlexDirection.Row,
+						Wrap = FlexWrap.Wrap,
 						Width = 500,
 						Height = 200,
+						AutoSizeAxes = Axes.Y,
 
 						Children = new FlexboxElement[] {
 							a = new() {
 								Basis = 100.Pixels(),
+								Height = 100.Pixels(),
+								Grow = 1,
 								Drawable = new Box {
 									Colour = Colour4.Red,
-									Margin = new MarginPadding( 10 )
+									Margin = new MarginPadding { Horizontal = 5 }
 								}
 							},
 							b = new() {
 								Basis = 100.Pixels(),
+								Height = 100.Pixels(),
+								Grow = 1,
 								Drawable = new Box {
 									Colour = Colour4.Green,
-									Margin = new MarginPadding( 5 )
+									Margin = new MarginPadding { Horizontal = 5 }
 								}
 							},
 							c = new() {
 								Basis = 100.Pixels(),
+								Height = 100.Pixels(),
+								Grow = 1,
 								Drawable = new Box {
-									Colour = Colour4.Blue
+									Colour = Colour4.Blue,
+									Margin = new MarginPadding { Horizontal = 5 }
+								}
+							},
+							new() {
+								Basis = 100.Pixels(),
+								Height = 100.Pixels(),
+								Grow = 1,
+								Drawable = new Box {
+									Colour = Colour4.Red,
+									Margin = new MarginPadding { Horizontal = 5 }
+								}
+							},
+							new() {
+								Basis = 100.Pixels(),
+								Height = 100.Pixels(),
+								Grow = 1,
+								Drawable = new Box {
+									Colour = Colour4.Green,
+									Margin = new MarginPadding { Horizontal = 5 }
+								}
+							},
+							new() {
+								Basis = 100.Pixels(),
+								Height = 100.Pixels(),
+								Grow = 1,
+								Drawable = new Box {
+									Colour = Colour4.Blue,
+									Margin = new MarginPadding { Horizontal = 5 }
 								}
 							}
 						}
@@ -63,12 +99,6 @@ namespace osu.Framework.Tests.Visual.Layout {
 			AddSliderStep( "Red basis", 0, 500, 100, v => a.Basis = v.Pixels() );
 			AddSliderStep( "Green basis", 0, 500, 100, v => b.Basis = v.Pixels() );
 			AddSliderStep( "Blue basis", 0, 500, 100, v => c.Basis = v.Pixels() );
-			AddSliderStep( "Red grow", 0, 1, 0d, v => a.Grow = v );
-			AddSliderStep( "Green grow", 0, 1, 0d, v => b.Grow = v );
-			AddSliderStep( "Blue grow", 0, 1, 0d, v => c.Grow = v );
-			AddSliderStep( "Red shrink", 0, 1, 1d, v => a.Shrink = v );
-			AddSliderStep( "Green shrink", 0, 1, 1d, v => b.Shrink = v );
-			AddSliderStep( "Blue shrink", 0, 1, 1d, v => c.Shrink = v );
 		}
 	}
 }
