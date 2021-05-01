@@ -1,5 +1,4 @@
 using osu.Framework.Testing;
-using osu.Framework.Tests;
 
 namespace osu.Framework.Tests.Visual {
 	public class FlexboxTestScene : TestScene {

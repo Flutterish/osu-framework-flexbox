@@ -1,5 +1,4 @@
-﻿using osu.Framework;
-using osu.Framework.Platform;
+﻿using osu.Framework.Platform;
 
 namespace osu.Framework.Tests {
 	public static class Program {
