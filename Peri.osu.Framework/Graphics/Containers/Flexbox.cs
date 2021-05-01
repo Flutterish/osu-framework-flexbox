@@ -8,16 +8,16 @@ namespace osu.Framework.Graphics.Containers {
 	public class Flexbox : CompositeDrawable {
 		internal Dictionary<Drawable, ItemData> childData = new();
 
-		public void Add ( FlexboxElement element ) {
+		public void Add ( FlexboxItem element ) {
 			AddInternal( element.Drawable );
 			childData.Add( element.Drawable, new ItemData( element ) );
 		}
-		public void AddRange ( IEnumerable<FlexboxElement> elements ) {
+		public void AddRange ( IEnumerable<FlexboxItem> elements ) {
 			foreach ( var i in elements ) {
 				Add( i );
 			}
 		}
-		public IReadOnlyList<FlexboxElement> Children {
+		public IReadOnlyList<FlexboxItem> Children {
 			get => childData.Select( x => x.Value.Source ).ToImmutableList();
 			set {
 				Clear();
@@ -44,7 +44,7 @@ namespace osu.Framework.Graphics.Containers {
 		}
 
 		internal class ItemData {
-			public ItemData ( FlexboxElement element ) {
+			public ItemData ( FlexboxItem element ) {
 				Source = element;
 			}
 
@@ -53,7 +53,7 @@ namespace osu.Framework.Graphics.Containers {
 			public double MinSize;
 			public double Position;
 
-			public FlexboxElement Source;
+			public FlexboxItem Source;
 			public Drawable Drawable => Source.Drawable;
 		}
 
@@ -73,10 +73,10 @@ namespace osu.Framework.Graphics.Containers {
 
 				foreach ( var i in childData.Values ) {
 					if ( isHorizontal && !i.Source.Height.IsAbsolute ) {
-						throw new InvalidOperationException( $"Cannot have a horizontally wrapping flexbox with an item that scales vertically (yet). All the items need to have an absolute {nameof(FlexboxElement)}.{nameof(FlexboxElement.Height)}" );
+						throw new InvalidOperationException( $"Cannot have a horizontally wrapping flexbox with an item that scales vertically (yet). All the items need to have an absolute {nameof(FlexboxItem)}.{nameof(FlexboxItem.Height)}" );
 					}
 					else if ( !isHorizontal && !i.Source.Width.IsAbsolute ) {
-						throw new InvalidOperationException( $"Cannot have a vertically wrapping flexbox with an item that scales horozontally (yet). All the items need to have an absolute {nameof(FlexboxElement)}.{nameof(FlexboxElement.Width)}" );
+						throw new InvalidOperationException( $"Cannot have a vertically wrapping flexbox with an item that scales horozontally (yet). All the items need to have an absolute {nameof(FlexboxItem)}.{nameof(FlexboxItem.Width)}" );
 					}
 
 					var size = ( i.Source.Basis.IsAbsolute ? i.Source.Basis.Amout : ( totalSpace * i.Source.Basis.Amout ) ) + i.Drawable.Margin.Left + i.Drawable.Margin.Right;
@@ -127,7 +127,7 @@ namespace osu.Framework.Graphics.Containers {
 					i.MaxSize = i.Source.MaxHeight.IsAbsolute ? i.Source.MaxHeight.Amout : ( totalSpace * i.Source.MaxHeight.Amout ) + i.Drawable.Margin.Bottom + i.Drawable.Margin.Top;
 				}
 
-				i.Size = Math.Clamp( i.Size, i.MinSize, i.MaxSize );
+				i.Size = Math.Min( Math.Max( i.Size, i.MinSize ), i.MaxSize );
 				takenSpace += i.Size;
 			}
 
@@ -194,9 +194,11 @@ namespace osu.Framework.Graphics.Containers {
 
 			if ( isHorizontal ) {
 				foreach ( var i in items ) {
-					i.Drawable.Height = (float)Math.Clamp(
-						i.Source.Height.IsAbsolute ? i.Source.Height.Amout : ( i.Source.Height.Amout * DrawHeight ),
-						i.Source.MinHeight.IsAbsolute ? i.Source.MinHeight.Amout : ( i.Source.MinHeight.Amout * DrawHeight ),
+					i.Drawable.Height = (float)Math.Min( 
+						Math.Max( 
+							i.Source.Height.IsAbsolute ? i.Source.Height.Amout : ( i.Source.Height.Amout * DrawHeight ),
+							i.Source.MinHeight.IsAbsolute ? i.Source.MinHeight.Amout : ( i.Source.MinHeight.Amout * DrawHeight )
+						),
 						i.Source.MaxHeight.IsAbsolute ? i.Source.MaxHeight.Amout : ( i.Source.MaxHeight.Amout * DrawHeight )
 					) - i.Drawable.Margin.Bottom - i.Drawable.Margin.Top;
 					i.Drawable.Y = 0;
@@ -204,9 +206,11 @@ namespace osu.Framework.Graphics.Containers {
 			}
 			else {
 				foreach ( var i in items ) {
-					i.Drawable.Width = (float)Math.Clamp(
-						i.Source.Width.IsAbsolute ? i.Source.Width.Amout : ( i.Source.Width.Amout * DrawWidth ),
-						i.Source.MinWidth.IsAbsolute ? i.Source.MinWidth.Amout : ( i.Source.MinWidth.Amout * DrawWidth ),
+					i.Drawable.Width = (float)Math.Min(
+						Math.Max(
+							i.Source.Width.IsAbsolute ? i.Source.Width.Amout : ( i.Source.Width.Amout * DrawWidth ),
+							i.Source.MinWidth.IsAbsolute ? i.Source.MinWidth.Amout : ( i.Source.MinWidth.Amout * DrawWidth )
+						),
 						i.Source.MaxWidth.IsAbsolute ? i.Source.MaxWidth.Amout : ( i.Source.MaxWidth.Amout * DrawWidth )
 					) - i.Drawable.Margin.Left - i.Drawable.Margin.Right;
 					i.Drawable.X = 0;
@@ -220,7 +224,10 @@ namespace osu.Framework.Graphics.Containers {
 			double pos = 0;
 			double gap = 0;
 
-			if ( Spacing is FlexSpacing.End ) {
+			if ( Spacing is FlexSpacing.Start ) {
+				pos = 0;
+			}
+			else if ( Spacing is FlexSpacing.End ) {
 				pos = remainingSpace;
 			}
 			else if( Spacing is FlexSpacing.Centre || count == 1 ) {
@@ -245,7 +252,7 @@ namespace osu.Framework.Graphics.Containers {
 		}
 	}
 
-	public class FlexboxElement {
+	public class FlexboxItem {
 		/// <summary>
 		/// The base size of this element
 		/// </summary>
@@ -285,7 +292,7 @@ namespace osu.Framework.Graphics.Containers {
 		public double Shrink = 1;
 
 		public Drawable Drawable { get; init; }
-		public static implicit operator Drawable ( FlexboxElement element )
+		public static implicit operator Drawable ( FlexboxItem element )
 			=> element.Drawable;
 	}
 
@@ -295,7 +302,7 @@ namespace osu.Framework.Graphics.Containers {
 	}
 
 	public static class FlexboxExtensions {
-		public static FlexboxElement GetFlexboxProperties ( this Drawable self )
+		public static FlexboxItem GetFlexboxProperties ( this Drawable self )
 			=> ( self.Parent as Flexbox ).childData[ self ].Source;
 
 		public static Unit Pixels ( this double value )

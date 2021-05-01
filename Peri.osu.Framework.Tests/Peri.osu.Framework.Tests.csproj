@@ -6,7 +6,7 @@
   </PropertyGroup>
   <ItemGroup Label="Package References">
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.15.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Peri.osu.Framework\Peri.osu.Framework.csproj" />

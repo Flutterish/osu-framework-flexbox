@@ -1,7 +1,7 @@
 using osu.Framework.Testing;
 
 namespace osu.Framework.Tests.Visual {
-	public class FlexboxTestScene : TestScene {
+	public abstract class FlexboxTestScene : TestScene {
 		protected override ITestSceneTestRunner CreateRunner () => new FlexboxTestSceneTestRunner();
 
 		private class FlexboxTestSceneTestRunner : FlexboxTestGame, ITestSceneTestRunner {
