@@ -1,4 +1,5 @@
-﻿using System;
+﻿using osu.Framework.Bindables;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -256,40 +257,76 @@ namespace osu.Framework.Graphics.Containers {
 		/// <summary>
 		/// The base size of this element
 		/// </summary>
-		public Unit Basis = 0.Pixels();
+		public Unit Basis {
+			get => BasisBindable.Value;
+			set => BasisBindable.Value = value;
+		}
+		public readonly Bindable<Unit> BasisBindable = new( 0.Pixels() );
 
 		/// <summary>
 		/// Minimum width
 		/// </summary>
-		public Unit MinWidth = 0.Pixels();
+		public Unit MinWidth {
+			get => MinWidthBindable.Value;
+			set => MinWidthBindable.Value = value;
+		}
+		public readonly Bindable<Unit> MinWidthBindable = new( 0.Pixels() );
 		/// <summary>
 		/// Target width when this is the perpendicular direction
 		/// </summary>
-		public Unit Width = 100.Percent();
+		public Unit Width {
+			get => WidthBindable.Value;
+			set => WidthBindable.Value = value;
+		}
+		public readonly Bindable<Unit> WidthBindable = new( 100.Percent() );
 		/// <summary>
 		/// Maximum width
 		/// </summary>
-		public Unit MaxWidth = 100.Percent();
+		public Unit MaxWidth {
+			get => MaxWidthBindable.Value;
+			set => MaxWidthBindable.Value = value;
+		}
+		public readonly Bindable<Unit> MaxWidthBindable = new( 100.Percent() );
 		/// <summary>
 		/// Minimum height
 		/// </summary>
-		public Unit MinHeight = 0.Pixels();
+		public Unit MinHeight {
+			get => MinHeightBindable.Value;
+			set => MinHeightBindable.Value = value;
+		}
+		public readonly Bindable<Unit> MinHeightBindable = new( 0.Pixels() );
 		/// <summary>
 		/// Target height when this is the perpendicular direction
 		/// </summary>
-		public Unit Height = 100.Percent();
+		public Unit Height {
+			get => HeightBindable.Value;
+			set => HeightBindable.Value = value;
+		}
+		public readonly Bindable<Unit> HeightBindable = new( 100.Percent() );
 		/// <summary>
 		/// Maximum height
 		/// </summary>
-		public Unit MaxHeight = 100.Percent();
+		public Unit MaxHeight {
+			get => MaxHeightBindable.Value;
+			set => MaxHeightBindable.Value = value;
+		}
+		public readonly Bindable<Unit> MaxHeightBindable = new( 100.Percent() );
 		/// <summary>
 		/// Weight of remaining space this element wants to occupy.
 		/// </summary>
-		public double Grow;
+		public double Grow {
+			get => GrowBindable.Value;
+			set => GrowBindable.Value = value;
+		}
+		public readonly BindableDouble GrowBindable = new( 0 );
 		/// <summary>
 		/// If non-zero, this is the inverse goal ratio of this element when shrinking.
 		/// </summary>
-		public double Shrink = 1;
+		public double Shrink {
+			get => ShrinkBindable.Value;
+			set => ShrinkBindable.Value = value;
+		}
+		public readonly BindableDouble ShrinkBindable = new( 1 );
 
 		public Drawable Drawable { get; init; }
 		public static implicit operator Drawable ( FlexboxItem element )
