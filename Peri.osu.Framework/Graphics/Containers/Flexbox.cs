@@ -1,4 +1,6 @@
 ﻿using osu.Framework.Bindables;
+using osu.Framework.Graphics.Transforms;
+using osu.Framework.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -333,9 +335,19 @@ namespace osu.Framework.Graphics.Containers {
 			=> element.Drawable;
 	}
 
-	public struct Unit {
+	public struct Unit : IInterpolable<Unit> {
 		public double Amout;
 		public bool IsAbsolute;
+
+		public Unit ValueAt<TEasing> ( double time, Unit startValue, Unit endValue, double startTime, double endTime, in TEasing easing ) where TEasing : IEasingFunction {
+			if ( startValue.IsAbsolute != endValue.IsAbsolute )
+				throw new InvalidOperationException( "Cannot interpolate between abslute and relative units yet" );
+
+			return new Unit {
+				Amout = startValue.Amout + easing.ApplyEasing( ( time - startTime ) / ( endTime - startTime ) ) * ( endValue.Amout - startValue.Amout ),
+				IsAbsolute = startValue.IsAbsolute
+			};
+		}
 	}
 
 	public static class FlexboxExtensions {

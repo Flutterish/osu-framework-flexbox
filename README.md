@@ -19,6 +19,7 @@ For a guide how flexboxes work [click here](https://css-tricks.com/snippets/css/
 * align-items
 * align-self
 * order
+* transforming between relative and absolute units
 
 ## Sample code
 ```cs
@@ -41,4 +42,7 @@ var menu = new Flexbox {
         }
     }
 };
+
+// A flexbox child animating its flex properties:
+this.TransformBindableTo( this.GetFlexboxProperties().BasisBindable, 100.Pixels(), 400, Easing.Out );
 ```
