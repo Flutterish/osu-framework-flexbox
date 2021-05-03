@@ -211,15 +211,37 @@ namespace osu.Framework.Graphics.Containers {
 
 			if ( isHorizontal ) {
 				foreach ( var i in items ) {
-					i.Drawable.Height = (float)i.Source.Height.Clamp( i.Source.MinHeight, i.Source.MaxHeight, DrawHeight )
-						- i.Drawable.Margin.Bottom - i.Drawable.Margin.Top;
+					if ( Wrap is not FlexWrap.NoWrap ) {
+						i.Drawable.Height = (float)Math.Min( // TODO these can be relative to the current line size
+							Math.Max(
+								i.Source.Height.IsAbsolute ? i.Source.Height.Amout : 0,
+								i.Source.MinHeight.IsAbsolute ? i.Source.MinHeight.Amout : 0
+							),
+							i.Source.MaxHeight.IsAbsolute ? i.Source.MaxHeight.Amout : double.PositiveInfinity
+						);
+					}
+					else {
+						i.Drawable.Height = (float)i.Source.Height.Clamp( i.Source.MinHeight, i.Source.MaxHeight, DrawHeight );
+					}
+					i.Drawable.Height -= i.Drawable.Margin.Bottom + i.Drawable.Margin.Top;
 					i.Drawable.Y = 0;
 				}
 			}
 			else {
 				foreach ( var i in items ) {
-					i.Drawable.Width = (float)i.Source.Width.Clamp( i.Source.MinWidth, i.Source.MaxWidth, DrawWidth )
-						- i.Drawable.Margin.Left - i.Drawable.Margin.Right;
+					if ( Wrap is not FlexWrap.NoWrap ) {
+						i.Drawable.Width = (float)Math.Min(
+							Math.Max(
+								i.Source.Width.IsAbsolute ? i.Source.Width.Amout : 0,
+								i.Source.MinWidth.IsAbsolute ? i.Source.MinWidth.Amout : 0
+							),
+							i.Source.MaxWidth.IsAbsolute ? i.Source.MaxWidth.Amout : double.PositiveInfinity
+						);
+					}
+					else {
+						i.Drawable.Width = (float)i.Source.Width.Clamp( i.Source.MinWidth, i.Source.MaxWidth, DrawWidth );
+					}
+					i.Drawable.Width -= i.Drawable.Margin.Left + i.Drawable.Margin.Right;
 					i.Drawable.X = 0;
 				}
 			}
