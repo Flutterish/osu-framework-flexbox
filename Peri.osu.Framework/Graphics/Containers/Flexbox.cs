@@ -117,7 +117,10 @@ namespace osu.Framework.Graphics.Containers {
 							item.Drawable.X = (float)lineOffset;
 						}
 					}
-					lineOffset += line.Max( x => isHorizontal ? x.Drawable.Height : x.Drawable.Width );
+					lineOffset += line.Max( x => isHorizontal 
+						? ( x.Drawable.Height + x.Drawable.Margin.Top + x.Drawable.Margin.Bottom )
+						: ( x.Drawable.Width + x.Drawable.Margin.Left + x.Drawable.Margin.Right )
+					);
 				}
 			}
 		}
