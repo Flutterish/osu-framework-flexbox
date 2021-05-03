@@ -58,6 +58,17 @@ namespace osu.Framework.Graphics.Containers {
 
 			public FlexboxItem Source;
 			public Drawable Drawable => Source.Drawable;
+
+			public double CalculateBaseSize ( bool isHorizontal, double containerSize ) {
+				if ( isHorizontal ) {
+					return Source.Basis.Clamp( Source.MinWidth, Source.MaxWidth, containerSize )
+						+ Drawable.Margin.Left + Drawable.Margin.Right;
+				}
+				else {
+					return Source.Basis.Clamp( Source.MinHeight, Source.MaxHeight, containerSize ) 
+						+ Drawable.Margin.Top + Drawable.Margin.Left;
+				}
+			}
 		}
 
 		protected override void Update () {
@@ -75,14 +86,14 @@ namespace osu.Framework.Graphics.Containers {
 				double totalSpace = isHorizontal ? DrawWidth : DrawHeight;
 
 				foreach ( var i in childData.Values ) {
+					double size = i.CalculateBaseSize( isHorizontal, totalSpace );
 					if ( isHorizontal && !i.Source.Height.IsAbsolute ) {
-						throw new InvalidOperationException( $"Cannot have a horizontally wrapping flexbox with an item that scales vertically (yet). All the items need to have an absolute {nameof(FlexboxItem)}.{nameof(FlexboxItem.Height)}" );
+						throw new InvalidOperationException( $"Cannot have a horizontally wrapping flexbox with an item that scales vertically (yet). All the items need to have an absolute {nameof( FlexboxItem )}.{nameof( FlexboxItem.Height )}" );
 					}
 					else if ( !isHorizontal && !i.Source.Width.IsAbsolute ) {
-						throw new InvalidOperationException( $"Cannot have a vertically wrapping flexbox with an item that scales horozontally (yet). All the items need to have an absolute {nameof(FlexboxItem)}.{nameof(FlexboxItem.Width)}" );
+						throw new InvalidOperationException( $"Cannot have a vertically wrapping flexbox with an item that scales horozontally (yet). All the items need to have an absolute {nameof( FlexboxItem )}.{nameof( FlexboxItem.Width )}" );
 					}
 
-					var size = ( i.Source.Basis.IsAbsolute ? i.Source.Basis.Amout : ( totalSpace * i.Source.Basis.Amout ) ) + i.Drawable.Margin.Left + i.Drawable.Margin.Right;
 					if ( line.Count != 0 && lineSize + size > totalSpace ) {
 						line = new();
 						lines.Add( line );
@@ -106,7 +117,7 @@ namespace osu.Framework.Graphics.Containers {
 							item.Drawable.X = (float)lineOffset;
 						}
 					}
-					lineOffset += _line.Max( x => isHorizontal ? x.Drawable.Height : x.Drawable.Width );
+					lineOffset += line.Max( x => isHorizontal ? x.Drawable.Height : x.Drawable.Width );
 				}
 			}
 		}
@@ -120,14 +131,14 @@ namespace osu.Framework.Graphics.Containers {
 				i.Drawable.Anchor = Anchor.TopLeft;
 				i.Drawable.Origin = Anchor.TopLeft;
 				if ( isHorizontal ) {
-					i.Size = ( i.Source.Basis.IsAbsolute ? i.Source.Basis.Amout : ( totalSpace * i.Source.Basis.Amout ) ) + i.Drawable.Margin.Left + i.Drawable.Margin.Right;
-					i.MinSize = i.Source.MinWidth.IsAbsolute ? i.Source.MinWidth.Amout : ( totalSpace * i.Source.MinWidth.Amout ) + i.Drawable.Margin.Left + i.Drawable.Margin.Right;
-					i.MaxSize = i.Source.MaxWidth.IsAbsolute ? i.Source.MaxWidth.Amout : ( totalSpace * i.Source.MaxWidth.Amout ) + i.Drawable.Margin.Left + i.Drawable.Margin.Right;
+					i.Size = i.Source.Basis.AbsoluteAmout( totalSpace ) + i.Drawable.Margin.Left + i.Drawable.Margin.Right;
+					i.MinSize = i.Source.MinWidth.AbsoluteAmout( totalSpace ) + i.Drawable.Margin.Left + i.Drawable.Margin.Right;
+					i.MaxSize = i.Source.MaxWidth.AbsoluteAmout( totalSpace ) + i.Drawable.Margin.Left + i.Drawable.Margin.Right;
 				}
 				else {
-					i.Size = ( i.Source.Basis.IsAbsolute ? i.Source.Basis.Amout : ( totalSpace * i.Source.Basis.Amout ) ) + i.Drawable.Margin.Bottom + i.Drawable.Margin.Top;
-					i.MinSize = i.Source.MinHeight.IsAbsolute ? i.Source.MinHeight.Amout : ( totalSpace * i.Source.MinHeight.Amout ) + i.Drawable.Margin.Bottom + i.Drawable.Margin.Top;
-					i.MaxSize = i.Source.MaxHeight.IsAbsolute ? i.Source.MaxHeight.Amout : ( totalSpace * i.Source.MaxHeight.Amout ) + i.Drawable.Margin.Bottom + i.Drawable.Margin.Top;
+					i.Size = i.Source.Basis.AbsoluteAmout( totalSpace ) + i.Drawable.Margin.Bottom + i.Drawable.Margin.Top;
+					i.MinSize = i.Source.MinHeight.AbsoluteAmout( totalSpace ) + i.Drawable.Margin.Bottom + i.Drawable.Margin.Top;
+					i.MaxSize = i.Source.MaxHeight.AbsoluteAmout( totalSpace ) + i.Drawable.Margin.Bottom + i.Drawable.Margin.Top;
 				}
 
 				i.Size = Math.Min( Math.Max( i.Size, i.MinSize ), i.MaxSize );
@@ -197,25 +208,15 @@ namespace osu.Framework.Graphics.Containers {
 
 			if ( isHorizontal ) {
 				foreach ( var i in items ) {
-					i.Drawable.Height = (float)Math.Min( 
-						Math.Max( 
-							i.Source.Height.IsAbsolute ? i.Source.Height.Amout : ( i.Source.Height.Amout * DrawHeight ),
-							i.Source.MinHeight.IsAbsolute ? i.Source.MinHeight.Amout : ( i.Source.MinHeight.Amout * DrawHeight )
-						),
-						i.Source.MaxHeight.IsAbsolute ? i.Source.MaxHeight.Amout : ( i.Source.MaxHeight.Amout * DrawHeight )
-					) - i.Drawable.Margin.Bottom - i.Drawable.Margin.Top;
+					i.Drawable.Height = (float)i.Source.Height.Clamp( i.Source.MinHeight, i.Source.MaxHeight, DrawHeight )
+						- i.Drawable.Margin.Bottom - i.Drawable.Margin.Top;
 					i.Drawable.Y = 0;
 				}
 			}
 			else {
 				foreach ( var i in items ) {
-					i.Drawable.Width = (float)Math.Min(
-						Math.Max(
-							i.Source.Width.IsAbsolute ? i.Source.Width.Amout : ( i.Source.Width.Amout * DrawWidth ),
-							i.Source.MinWidth.IsAbsolute ? i.Source.MinWidth.Amout : ( i.Source.MinWidth.Amout * DrawWidth )
-						),
-						i.Source.MaxWidth.IsAbsolute ? i.Source.MaxWidth.Amout : ( i.Source.MaxWidth.Amout * DrawWidth )
-					) - i.Drawable.Margin.Left - i.Drawable.Margin.Right;
+					i.Drawable.Width = (float)i.Source.Width.Clamp( i.Source.MinWidth, i.Source.MaxWidth, DrawWidth )
+						- i.Drawable.Margin.Left - i.Drawable.Margin.Right;
 					i.Drawable.X = 0;
 				}
 			}
@@ -348,6 +349,12 @@ namespace osu.Framework.Graphics.Containers {
 				IsAbsolute = startValue.IsAbsolute
 			};
 		}
+
+		public double AbsoluteAmout ( double containerSize ) {
+			return IsAbsolute
+				? Amout
+				: ( Amout * containerSize );
+		}
 	}
 
 	public static class FlexboxExtensions {
@@ -365,6 +372,16 @@ namespace osu.Framework.Graphics.Containers {
 
 		public static Unit Percent ( this int value )
 			=> new Unit { Amout = value / 100d, IsAbsolute = false };
+
+		public static double Clamp ( this Unit @base, Unit min, Unit max, double containerSize ) {
+			return Math.Min(
+				Math.Max(
+					@base.AbsoluteAmout( containerSize ),
+					min.AbsoluteAmout( containerSize )
+				),
+				max.AbsoluteAmout( containerSize )
+			);
+		}
 	}
 
 	public enum FlexSpacing {

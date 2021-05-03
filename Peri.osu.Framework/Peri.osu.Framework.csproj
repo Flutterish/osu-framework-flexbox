@@ -1,6 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>osu.Framework.Flexbox</PackageId>
+    <Authors>Peri</Authors>
+    <Company>Peri</Company>
+    <Product>osu.Framework.Flexbox</Product>
+    <PackageProjectUrl>https://github.com/Flutterish/osu-framework-flexbox</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Flutterish/osu-framework-flexbox</RepositoryUrl>
+    <RepositoryType>github</RepositoryType>
+    <Version>0.8.0</Version>
+    <Copyright>Perigee</Copyright>
+    <PackageLicenseExpression></PackageLicenseExpression>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ppy.osu.Framework" Version="2021.427.0" />
