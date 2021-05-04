@@ -1,5 +1,7 @@
 ﻿using NUnit.Framework;
 using osu.Framework.Graphics.Containers;
+using System;
+using System.Linq;
 
 namespace osu.Framework.Tests.Visual.Examples {
 	[TestFixture]
@@ -16,6 +18,10 @@ namespace osu.Framework.Tests.Visual.Examples {
 
 			AddLabel( "Flexbox" );
 			AddSliderStep( "Height", 0, 500, 300, v => flexbox.Height = v );
+			AddSliderStep( "Item alignment", 0, 3, 0, v => flexbox.ItemAlignment = (ItemAlignment)v );
+			foreach ( var (e, i) in Enum.GetValues<ItemAlignment>().Zip( Enumerable.Range( 0, Enum.GetValues<ItemAlignment>().Count() ) ) ) {
+				AddLabel( $"{i}: {e}" );
+			}
 
 			for ( int i = 0; i < 3; i++ ) {
 				SampleBox item = new SampleBox();

@@ -1,6 +1,8 @@
 ﻿using NUnit.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using System;
+using System.Linq;
 
 namespace osu.Framework.Tests.Visual.Examples {
 	[TestFixture]
@@ -15,6 +17,12 @@ namespace osu.Framework.Tests.Visual.Examples {
 				}
 			) );
 
+			AddLabel( "Flexbox" );
+			AddSliderStep( "Item alignment", 0, 3, 0, v => flexbox.ItemAlignment = (ItemAlignment)v );
+			foreach ( var (e, i) in Enum.GetValues<ItemAlignment>().Zip( Enumerable.Range( 0, Enum.GetValues<ItemAlignment>().Count() ) ) ) {
+				AddLabel( $"{i}: {e}" );
+			}
+
 			SampleBox aitem = new SampleBox();
 			aitem.Grow = 1;
 			aitem.Height = 100.Pixels();
@@ -26,7 +34,7 @@ namespace osu.Framework.Tests.Visual.Examples {
 			AddLabel( $"Item 0" );
 			AddSliderStep( "Cross size [px]", 0, 500, 100, v => aitem.Height = v.Pixels() );
 			AddSliderStep( "Min cross size [px]", 0, 500, 0, v => aitem.MinHeight = v.Pixels() );
-			AddSliderStep( "Max cross size [px]", 0, 500, 300, v => aitem.MaxHeight = v.Pixels() );
+			AddSliderStep( "Max cross size [px]", 0, 500, 500, v => aitem.MaxHeight = v.Pixels() );
 
 			for ( int i = 0; i < 3; i++ ) {
 				var item = new SampleBox();

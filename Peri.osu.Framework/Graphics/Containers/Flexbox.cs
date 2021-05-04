@@ -1,5 +1,4 @@
-﻿using FFmpeg.AutoGen;
-using osu.Framework.Bindables;
+﻿using osu.Framework.Bindables;
 using osu.Framework.Graphics.Transforms;
 using osu.Framework.Utils;
 using System;
@@ -57,6 +56,8 @@ namespace osu.Framework.Graphics.Containers {
 		/// The maximum cross-axis size for a line
 		/// </summary>
 		public double MaxLineSize = double.PositiveInfinity;
+
+		public ItemAlignment ItemAlignment = ItemAlignment.Start;
 
 		new public Axes AutoSizeAxes {
 			get => base.AutoSizeAxes;
@@ -130,15 +131,7 @@ namespace osu.Framework.Graphics.Containers {
 			bool isHorizontal = Direction is FlexDirection.Row;
 
 			if ( Wrap is FlexWrap.NoWrap ) {
-				spaceLine( childData.Values );
-				foreach ( var i in childData.Values ) {
-					if ( isHorizontal ) {
-						i.Y = 0;
-					}
-					else {
-						i.X = 0;
-					}
-				}
+				spaceLine( childData.Values, 0 );
 			}
 			else {
 				List<List<ItemData>> lines = new();
@@ -164,15 +157,7 @@ namespace osu.Framework.Graphics.Containers {
 
 				double lineOffset = 0;
 				foreach ( var _line in lines ) {
-					spaceLine( _line );
-					foreach ( var item in _line ) {
-						if ( isHorizontal ) {
-							item.Y = lineOffset;
-						}
-						else {
-							item.X = lineOffset;
-						}
-					}
+					spaceLine( _line, lineOffset );
 					lineOffset += line.Max( x => isHorizontal 
 						? ( x.Height + x.VerticalMargins )
 						: ( x.Width + x.HorizontalMargins )
@@ -181,7 +166,7 @@ namespace osu.Framework.Graphics.Containers {
 			}
 		}
 
-		void spaceLine ( IEnumerable<ItemData> items ) {
+		void spaceLine ( IEnumerable<ItemData> items, double lineOffset ) {
 			bool isHorizontal = Direction is FlexDirection.Row;
 
 			double totalSpace = isHorizontal ? DrawWidth : DrawHeight;
@@ -270,7 +255,22 @@ namespace osu.Framework.Graphics.Containers {
 					? calculateLineSize( items, isHorizontal )
 					: DrawHeight;
 				foreach ( var i in items ) {
-					i.Height = i.Source.Height.Clamp( i.Source.MinHeight, i.Source.MaxHeight, lineSize - i.VerticalMargins );
+					var alignment = i.Source.SelfAlignment ?? ItemAlignment;
+
+					if ( alignment is ItemAlignment.Stretch )
+						i.Height = lineSize - i.VerticalMargins;
+					else
+						i.Height = i.Source.Height.Clamp( i.Source.MinHeight, i.Source.MaxHeight, lineSize - i.VerticalMargins );
+
+					if ( alignment is ItemAlignment.Stretch or ItemAlignment.Start ) {
+						i.Y = lineOffset;
+					}
+					else if ( alignment is ItemAlignment.Center ) {
+						i.Y = lineOffset + ( lineSize - i.Height - i.VerticalMargins ) / 2;
+					}
+					else if ( alignment is ItemAlignment.End ) {
+						i.Y = lineOffset + ( lineSize - i.Height - i.VerticalMargins );
+					}
 				}
 			}
 			else {
@@ -278,7 +278,22 @@ namespace osu.Framework.Graphics.Containers {
 					? calculateLineSize( items, isHorizontal )
 					: DrawWidth;
 				foreach ( var i in items ) {
-					i.Width = i.Source.Width.Clamp( i.Source.MinWidth, i.Source.MaxWidth, lineSize - i.HorizontalMargins );
+					var alignment = i.Source.SelfAlignment ?? ItemAlignment;
+
+					if ( alignment is ItemAlignment.Stretch )
+						i.Width = lineSize - i.HorizontalMargins;
+					else
+						i.Width = i.Source.Width.Clamp( i.Source.MinWidth, i.Source.MaxWidth, lineSize - i.HorizontalMargins );
+
+					if ( alignment is ItemAlignment.Stretch or ItemAlignment.Start ) {
+						i.X = lineOffset;
+					}
+					else if ( alignment is ItemAlignment.Center ) {
+						i.X = lineOffset + ( lineSize - i.Height - i.HorizontalMargins ) / 2;
+					}
+					else if ( alignment is ItemAlignment.End ) {
+						i.X = lineOffset + ( lineSize - i.Height - i.HorizontalMargins );
+					}
 				}
 			}
 		}
@@ -420,6 +435,8 @@ namespace osu.Framework.Graphics.Containers {
 		}
 		public readonly BindableDouble ShrinkBindable = new( 1 );
 
+		public ItemAlignment? SelfAlignment = null;
+
 		public Drawable Drawable { get; init; }
 		public static implicit operator Drawable ( FlexboxItem element )
 			=> element.Drawable;
@@ -526,5 +543,15 @@ namespace osu.Framework.Graphics.Containers {
 		/// Flex items will create new lines when they would need to shrink
 		/// </summary>
 		Wrap
+	}
+
+	public enum ItemAlignment {
+		Start,
+		End,
+		Center,
+		/// <summary>
+		/// Stretch the items to 100% line size. This will ignore their cross-axis size limits
+		/// </summary>
+		Stretch
 	}
 }
