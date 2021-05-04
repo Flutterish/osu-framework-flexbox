@@ -58,6 +58,7 @@ namespace osu.Framework.Graphics.Containers {
 		public double MaxLineSize = double.PositiveInfinity;
 
 		public ItemAlignment ItemAlignment = ItemAlignment.Start;
+		public ContentAlignment ContentAlignment = ContentAlignment.Start;
 
 		new public Axes AutoSizeAxes {
 			get => base.AutoSizeAxes;
@@ -87,6 +88,8 @@ namespace osu.Framework.Graphics.Containers {
 			public double MaxSize;
 			public double MinSize;
 			public double Position;
+
+			public double CrossAxisOffset;
 
 			public readonly BindableDouble FinalXBindable = new();
 			public readonly BindableDouble FinalYBindable = new();
@@ -130,11 +133,11 @@ namespace osu.Framework.Graphics.Containers {
 			base.Update();
 			bool isHorizontal = Direction is FlexDirection.Row;
 
+			List<List<ItemData>> lines = new();
 			if ( Wrap is FlexWrap.NoWrap ) {
-				spaceLine( childData.Values, 0 );
+				lines.Add( childData.Values.ToList() );
 			}
 			else {
-				List<List<ItemData>> lines = new();
 				List<ItemData> line = new();
 				lines.Add( line );
 				double lineSize = 0;
@@ -154,15 +157,60 @@ namespace osu.Framework.Graphics.Containers {
 						lineSize += size;
 					}
 				}
+			}
 
-				double lineOffset = 0;
-				foreach ( var _line in lines ) {
-					spaceLine( _line, lineOffset );
-					lineOffset += line.Max( x => isHorizontal 
-						? ( x.Height + x.VerticalMargins )
-						: ( x.Width + x.HorizontalMargins )
-					);
+			double lineOffset = 0;
+			foreach ( var _line in lines ) {
+				spaceLine( _line, lineOffset );
+				lineOffset += _line.Max( x => isHorizontal
+					? ( x.Height + x.VerticalMargins )
+					: ( x.Width + x.HorizontalMargins )
+				);
+			}
+			// line offset is now the total cross-axis size
+			double freeSpace;
+			if ( isHorizontal ) {
+				if ( AutoSizeAxes.HasFlag( Axes.Y ) ) {
+					freeSpace = 0;
 				}
+				else freeSpace = Height - lineOffset;
+			}
+			else {
+				if ( AutoSizeAxes.HasFlag( Axes.X ) ) {
+					freeSpace = 0;
+				}
+				else freeSpace = Width - lineOffset;
+			}
+			int lineCount = 0;
+			double gap = 0;
+			double offset = 0;
+			if ( ContentAlignment is ContentAlignment.Start ) {
+
+			}
+			else if ( ContentAlignment is ContentAlignment.End ) {
+				offset = freeSpace;
+			}
+			else if ( ContentAlignment is ContentAlignment.Centre || lines.Count <= 1 ) {
+				offset = freeSpace / 2;
+			}
+			else if ( ContentAlignment is ContentAlignment.SpaceAround ) {
+				gap = freeSpace / ( lines.Count + 1 );
+				offset = gap;
+			}
+			else if ( ContentAlignment is ContentAlignment.SpaceBetween ) {
+				gap = freeSpace / ( lines.Count - 1 );
+			}
+
+			foreach ( var _line in lines ) {
+				foreach ( var i in _line ) {
+					if ( isHorizontal ) {
+						i.Y = i.CrossAxisOffset + offset + gap * lineCount;
+					}
+					else {
+						i.X = i.CrossAxisOffset + offset + gap * lineCount;
+					}
+				}
+				lineCount++;
 			}
 		}
 
@@ -263,13 +311,13 @@ namespace osu.Framework.Graphics.Containers {
 						i.Height = i.Source.Height.Clamp( i.Source.MinHeight, i.Source.MaxHeight, lineSize - i.VerticalMargins );
 
 					if ( alignment is ItemAlignment.Stretch or ItemAlignment.Start ) {
-						i.Y = lineOffset;
+						i.CrossAxisOffset = lineOffset;
 					}
 					else if ( alignment is ItemAlignment.Center ) {
-						i.Y = lineOffset + ( lineSize - i.Height - i.VerticalMargins ) / 2;
+						i.CrossAxisOffset = lineOffset + ( lineSize - i.Height - i.VerticalMargins ) / 2;
 					}
 					else if ( alignment is ItemAlignment.End ) {
-						i.Y = lineOffset + ( lineSize - i.Height - i.VerticalMargins );
+						i.CrossAxisOffset = lineOffset + ( lineSize - i.Height - i.VerticalMargins );
 					}
 				}
 			}
@@ -286,13 +334,13 @@ namespace osu.Framework.Graphics.Containers {
 						i.Width = i.Source.Width.Clamp( i.Source.MinWidth, i.Source.MaxWidth, lineSize - i.HorizontalMargins );
 
 					if ( alignment is ItemAlignment.Stretch or ItemAlignment.Start ) {
-						i.X = lineOffset;
+						i.CrossAxisOffset = lineOffset;
 					}
 					else if ( alignment is ItemAlignment.Center ) {
-						i.X = lineOffset + ( lineSize - i.Height - i.HorizontalMargins ) / 2;
+						i.CrossAxisOffset = lineOffset + ( lineSize - i.Height - i.HorizontalMargins ) / 2;
 					}
 					else if ( alignment is ItemAlignment.End ) {
-						i.X = lineOffset + ( lineSize - i.Height - i.HorizontalMargins );
+						i.CrossAxisOffset = lineOffset + ( lineSize - i.Height - i.HorizontalMargins );
 					}
 				}
 			}
@@ -520,6 +568,15 @@ namespace osu.Framework.Graphics.Containers {
 		/// Items will have even gaps between themselves and the edges
 		/// </summary>
 		SpaceEvenly
+	}
+
+	public enum ContentAlignment {
+		Start,
+		End,
+		Centre,
+		SpaceBetween,
+		SpaceAround,
+		// TODO Stretch
 	}
 
 	// TODO item order

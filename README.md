@@ -9,6 +9,7 @@ Includes features such as:
 * min-width, max-width and width
 * min-height, max-height and height
 * align-items and align-self
+* align-content
 * avaiable in `px` and `%` units if applicable
 
 The `Flexbox` container is included in `osu.Framework.Graphics.Containers`.
@@ -16,7 +17,6 @@ The `Flexbox` container is included in `osu.Framework.Graphics.Containers`.
 For a guide how flexboxes work [click here](https://css-tricks.com/snippets/css/a-guide-to-flexbox/).
 
 ## Not implemented yet
-* align-content
 * order
 
 ## Sample code
