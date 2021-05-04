@@ -20,7 +20,6 @@ For a guide how flexboxes work [click here](https://css-tricks.com/snippets/css/
 * align-self
 * order
 * transforming between relative and absolute units
-* layout animations
 
 ## Sample code
 ```cs
