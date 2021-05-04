@@ -9,7 +9,7 @@
     <PackageProjectUrl>https://github.com/Flutterish/osu-framework-flexbox</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Flutterish/osu-framework-flexbox</RepositoryUrl>
     <RepositoryType>github</RepositoryType>
-    <Version>0.8.0</Version>
+    <Version>0.9.0</Version>
     <Copyright>Perigee</Copyright>
     <PackageLicenseExpression></PackageLicenseExpression>
   </PropertyGroup>

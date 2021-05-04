@@ -182,6 +182,7 @@ namespace osu.Framework.Graphics.Containers {
 				}
 				else freeSpace = Width - lineOffset;
 			}
+			freeSpace = Math.Max( 0, freeSpace );
 			int lineCount = 0;
 			double gap = 0;
 			double offset = 0;
