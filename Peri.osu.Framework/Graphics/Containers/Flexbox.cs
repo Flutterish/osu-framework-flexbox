@@ -13,7 +13,7 @@ namespace osu.Framework.Graphics.Containers {
 
 		public void Add ( FlexboxItem element ) {
 			AddInternal( element.Drawable );
-			childData.Add( element.Drawable, new ItemData( element ) );
+			childData.Add( element.Drawable, new ItemData( element, this ) );
 		}
 		public void AddRange ( IEnumerable<FlexboxItem> elements ) {
 			foreach ( var i in elements ) {
@@ -41,48 +41,96 @@ namespace osu.Framework.Graphics.Containers {
 		public FlexDirection Direction = FlexDirection.Row;
 		public FlexWrap Wrap = FlexWrap.NoWrap;
 
+		public double LayoutTransformDuration = 0;
+		public Easing LayoutTransformEasing = Easing.Out;
+
 		new public Axes AutoSizeAxes {
 			get => base.AutoSizeAxes;
 			set => base.AutoSizeAxes = value;
 		}
 
 		internal class ItemData {
-			public ItemData ( FlexboxItem element ) {
+			public ItemData ( FlexboxItem element, Flexbox flexbox ) {
 				Source = element;
+				Parent = flexbox;
+
+				FinalXBindable.Value = element.Drawable.X;
+				FinalYBindable.Value = element.Drawable.Y;
+				FinalWidthBindable.Value = element.Drawable.Width;
+				FinalHeightBindable.Value = element.Drawable.Height;
+
+				FinalXBindable.ValueChanged += v => element.Drawable.MoveToX( (float)v.NewValue, Parent.LayoutTransformDuration, Parent.LayoutTransformEasing );
+				FinalYBindable.ValueChanged += v => element.Drawable.MoveToY( (float)v.NewValue, Parent.LayoutTransformDuration, Parent.LayoutTransformEasing );
+				FinalWidthBindable.ValueChanged += v => element.Drawable.ResizeWidthTo( (float)v.NewValue, Parent.LayoutTransformDuration, Parent.LayoutTransformEasing );
+				FinalHeightBindable.ValueChanged += v => element.Drawable.ResizeHeightTo( (float)v.NewValue, Parent.LayoutTransformDuration, Parent.LayoutTransformEasing );
 			}
+
+			public double VerticalMargins => Drawable.Margin.Top + Drawable.Margin.Bottom;
+			public double HorizontalMargins => Drawable.Margin.Left + Drawable.Margin.Right;
 
 			public double Size;
 			public double MaxSize;
 			public double MinSize;
 			public double Position;
 
+			public readonly BindableDouble FinalXBindable = new();
+			public readonly BindableDouble FinalYBindable = new();
+			public readonly BindableDouble FinalWidthBindable = new();
+			public readonly BindableDouble FinalHeightBindable = new();
+
+			public double X {
+				get => FinalXBindable.Value;
+				set => FinalXBindable.Value = value;
+			}
+			public double Y {
+				get => FinalYBindable.Value;
+				set => FinalYBindable.Value = value;
+			}
+			public double Width {
+				get => FinalWidthBindable.Value;
+				set => FinalWidthBindable.Value = value;
+			}
+			public double Height {
+				get => FinalHeightBindable.Value;
+				set => FinalHeightBindable.Value = value;
+			}
+
+			public Flexbox Parent;
 			public FlexboxItem Source;
 			public Drawable Drawable => Source.Drawable;
 
 			public double CalculateBaseSize ( bool isHorizontal, double containerSize ) {
 				if ( isHorizontal ) {
 					return Source.Basis.Clamp( Source.MinWidth, Source.MaxWidth, containerSize )
-						+ Drawable.Margin.Left + Drawable.Margin.Right;
+						+ HorizontalMargins;
 				}
 				else {
 					return Source.Basis.Clamp( Source.MinHeight, Source.MaxHeight, containerSize ) 
-						+ Drawable.Margin.Top + Drawable.Margin.Left;
+						+ VerticalMargins;
 				}
 			}
 		}
 
 		protected override void Update () {
 			base.Update();
+			bool isHorizontal = Direction is FlexDirection.Row;
 
 			if ( Wrap is FlexWrap.NoWrap ) {
 				spaceLine( childData.Values );
+				foreach ( var i in childData.Values ) {
+					if ( isHorizontal ) {
+						i.Y = 0;
+					}
+					else {
+						i.X = 0;
+					}
+				}
 			}
 			else {
 				List<List<ItemData>> lines = new();
 				List<ItemData> line = new();
 				lines.Add( line );
 				double lineSize = 0;
-				bool isHorizontal = Direction is FlexDirection.Row;
 				double totalSpace = isHorizontal ? DrawWidth : DrawHeight;
 
 				foreach ( var i in childData.Values ) {
@@ -111,15 +159,15 @@ namespace osu.Framework.Graphics.Containers {
 					spaceLine( _line );
 					foreach ( var item in _line ) {
 						if ( isHorizontal ) {
-							item.Drawable.Y = (float)lineOffset;
+							item.Y = lineOffset;
 						}
 						else {
-							item.Drawable.X = (float)lineOffset;
+							item.X = lineOffset;
 						}
 					}
 					lineOffset += line.Max( x => isHorizontal 
-						? ( x.Drawable.Height + x.Drawable.Margin.Top + x.Drawable.Margin.Bottom )
-						: ( x.Drawable.Width + x.Drawable.Margin.Left + x.Drawable.Margin.Right )
+						? ( x.Height + x.VerticalMargins )
+						: ( x.Width + x.HorizontalMargins )
 					);
 				}
 			}
@@ -134,14 +182,14 @@ namespace osu.Framework.Graphics.Containers {
 				i.Drawable.Anchor = Anchor.TopLeft;
 				i.Drawable.Origin = Anchor.TopLeft;
 				if ( isHorizontal ) {
-					i.Size = i.Source.Basis.AbsoluteAmout( totalSpace ) + i.Drawable.Margin.Left + i.Drawable.Margin.Right;
-					i.MinSize = i.Source.MinWidth.AbsoluteAmout( totalSpace ) + i.Drawable.Margin.Left + i.Drawable.Margin.Right;
-					i.MaxSize = i.Source.MaxWidth.AbsoluteAmout( totalSpace ) + i.Drawable.Margin.Left + i.Drawable.Margin.Right;
+					i.Size = i.Source.Basis.AbsoluteAmout( totalSpace ) + i.HorizontalMargins;
+					i.MinSize = i.Source.MinWidth.AbsoluteAmout( totalSpace ) + i.HorizontalMargins;
+					i.MaxSize = i.Source.MaxWidth.AbsoluteAmout( totalSpace ) + i.HorizontalMargins;
 				}
 				else {
-					i.Size = i.Source.Basis.AbsoluteAmout( totalSpace ) + i.Drawable.Margin.Bottom + i.Drawable.Margin.Top;
-					i.MinSize = i.Source.MinHeight.AbsoluteAmout( totalSpace ) + i.Drawable.Margin.Bottom + i.Drawable.Margin.Top;
-					i.MaxSize = i.Source.MaxHeight.AbsoluteAmout( totalSpace ) + i.Drawable.Margin.Bottom + i.Drawable.Margin.Top;
+					i.Size = i.Source.Basis.AbsoluteAmout( totalSpace ) + i.VerticalMargins;
+					i.MinSize = i.Source.MinHeight.AbsoluteAmout( totalSpace ) + i.VerticalMargins;
+					i.MaxSize = i.Source.MaxHeight.AbsoluteAmout( totalSpace ) + i.VerticalMargins;
 				}
 
 				i.Size = Math.Min( Math.Max( i.Size, i.MinSize ), i.MaxSize );
@@ -198,51 +246,47 @@ namespace osu.Framework.Graphics.Containers {
 			spaceItems( totalSpace - takenSpace, items );
 			if ( isHorizontal ) {
 				foreach ( var i in items ) {
-					i.Drawable.Width = (float)i.Size - i.Drawable.Margin.Left - i.Drawable.Margin.Right;
-					i.Drawable.X = (float)i.Position;
+					i.Width = i.Size - i.HorizontalMargins;
+					i.X = i.Position;
 				}
 			}
 			else {
 				foreach ( var i in items ) {
-					i.Drawable.Height = (float)i.Size - i.Drawable.Margin.Top - i.Drawable.Margin.Bottom;
-					i.Drawable.Y = (float)i.Position;
+					i.Height = i.Size - i.VerticalMargins;
+					i.Y = i.Position;
 				}
 			}
 
 			if ( isHorizontal ) {
 				foreach ( var i in items ) {
 					if ( Wrap is not FlexWrap.NoWrap ) {
-						i.Drawable.Height = (float)Math.Min( // TODO these can be relative to the current line size
+						i.Height = Math.Min( // TODO these can be relative to the current line size
 							Math.Max(
 								i.Source.Height.IsAbsolute ? i.Source.Height.Amout : 0,
 								i.Source.MinHeight.IsAbsolute ? i.Source.MinHeight.Amout : 0
 							),
 							i.Source.MaxHeight.IsAbsolute ? i.Source.MaxHeight.Amout : double.PositiveInfinity
-						);
+						) - i.VerticalMargins;
 					}
 					else {
-						i.Drawable.Height = (float)i.Source.Height.Clamp( i.Source.MinHeight, i.Source.MaxHeight, DrawHeight );
+						i.Height = i.Source.Height.Clamp( i.Source.MinHeight, i.Source.MaxHeight, DrawHeight ) - i.VerticalMargins;
 					}
-					i.Drawable.Height -= i.Drawable.Margin.Bottom + i.Drawable.Margin.Top;
-					i.Drawable.Y = 0;
 				}
 			}
 			else {
 				foreach ( var i in items ) {
 					if ( Wrap is not FlexWrap.NoWrap ) {
-						i.Drawable.Width = (float)Math.Min(
+						i.Width = Math.Min(
 							Math.Max(
 								i.Source.Width.IsAbsolute ? i.Source.Width.Amout : 0,
 								i.Source.MinWidth.IsAbsolute ? i.Source.MinWidth.Amout : 0
 							),
 							i.Source.MaxWidth.IsAbsolute ? i.Source.MaxWidth.Amout : double.PositiveInfinity
-						);
+						) - i.HorizontalMargins;
 					}
 					else {
-						i.Drawable.Width = (float)i.Source.Width.Clamp( i.Source.MinWidth, i.Source.MaxWidth, DrawWidth );
+						i.Width = i.Source.Width.Clamp( i.Source.MinWidth, i.Source.MaxWidth, DrawWidth ) - i.HorizontalMargins;
 					}
-					i.Drawable.Width -= i.Drawable.Margin.Left + i.Drawable.Margin.Right;
-					i.Drawable.X = 0;
 				}
 			}
 		}
