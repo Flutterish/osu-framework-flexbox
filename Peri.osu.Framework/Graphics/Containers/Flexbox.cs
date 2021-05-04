@@ -270,7 +270,7 @@ namespace osu.Framework.Graphics.Containers {
 					? calculateLineSize( items, isHorizontal )
 					: DrawHeight;
 				foreach ( var i in items ) {
-					i.Height = i.Source.Height.Clamp( i.Source.MinHeight, i.Source.MaxHeight, lineSize ) - i.VerticalMargins;
+					i.Height = i.Source.Height.Clamp( i.Source.MinHeight, i.Source.MaxHeight, lineSize - i.VerticalMargins );
 				}
 			}
 			else {
@@ -278,7 +278,7 @@ namespace osu.Framework.Graphics.Containers {
 					? calculateLineSize( items, isHorizontal )
 					: DrawWidth;
 				foreach ( var i in items ) {
-					i.Width = i.Source.Width.Clamp( i.Source.MinWidth, i.Source.MaxWidth, lineSize ) - i.HorizontalMargins;
+					i.Width = i.Source.Width.Clamp( i.Source.MinWidth, i.Source.MaxWidth, lineSize - i.HorizontalMargins );
 				}
 			}
 		}
