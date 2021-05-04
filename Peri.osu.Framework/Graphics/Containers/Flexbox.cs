@@ -1,4 +1,5 @@
-﻿using osu.Framework.Bindables;
+﻿using FFmpeg.AutoGen;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics.Transforms;
 using osu.Framework.Utils;
 using System;
@@ -43,6 +44,19 @@ namespace osu.Framework.Graphics.Containers {
 
 		public double LayoutTransformDuration = 0;
 		public Easing LayoutTransformEasing = Easing.Out;
+
+		/// <summary>
+		/// The default line size when no item has an absolute cross-axis size
+		/// </summary>
+		public double LineSize;
+		/// <summary>
+		/// The minimum cross-axis size for a line
+		/// </summary>
+		public double MinLineSize = 0;
+		/// <summary>
+		/// The maximum cross-axis size for a line
+		/// </summary>
+		public double MaxLineSize = double.PositiveInfinity;
 
 		new public Axes AutoSizeAxes {
 			get => base.AutoSizeAxes;
@@ -135,12 +149,6 @@ namespace osu.Framework.Graphics.Containers {
 
 				foreach ( var i in childData.Values ) {
 					double size = i.CalculateBaseSize( isHorizontal, totalSpace );
-					if ( isHorizontal && !i.Source.Height.IsAbsolute ) {
-						throw new InvalidOperationException( $"Cannot have a horizontally wrapping flexbox with an item that scales vertically (yet). All the items need to have an absolute {nameof( FlexboxItem )}.{nameof( FlexboxItem.Height )}" );
-					}
-					else if ( !isHorizontal && !i.Source.Width.IsAbsolute ) {
-						throw new InvalidOperationException( $"Cannot have a vertically wrapping flexbox with an item that scales horozontally (yet). All the items need to have an absolute {nameof( FlexboxItem )}.{nameof( FlexboxItem.Width )}" );
-					}
 
 					if ( line.Count != 0 && lineSize + size > totalSpace ) {
 						line = new();
@@ -258,37 +266,49 @@ namespace osu.Framework.Graphics.Containers {
 			}
 
 			if ( isHorizontal ) {
+				var lineSize = AutoSizeAxes.HasFlag( Axes.Y )
+					? calculateLineSize( items, isHorizontal )
+					: DrawHeight;
 				foreach ( var i in items ) {
-					if ( Wrap is not FlexWrap.NoWrap ) {
-						i.Height = Math.Min( // TODO these can be relative to the current line size
-							Math.Max(
-								i.Source.Height.IsAbsolute ? i.Source.Height.Amout : 0,
-								i.Source.MinHeight.IsAbsolute ? i.Source.MinHeight.Amout : 0
-							),
-							i.Source.MaxHeight.IsAbsolute ? i.Source.MaxHeight.Amout : double.PositiveInfinity
-						) - i.VerticalMargins;
-					}
-					else {
-						i.Height = i.Source.Height.Clamp( i.Source.MinHeight, i.Source.MaxHeight, DrawHeight ) - i.VerticalMargins;
-					}
+					i.Height = i.Source.Height.Clamp( i.Source.MinHeight, i.Source.MaxHeight, lineSize ) - i.VerticalMargins;
 				}
 			}
 			else {
+				var lineSize = AutoSizeAxes.HasFlag( Axes.X )
+					? calculateLineSize( items, isHorizontal )
+					: DrawWidth;
 				foreach ( var i in items ) {
-					if ( Wrap is not FlexWrap.NoWrap ) {
-						i.Width = Math.Min(
-							Math.Max(
-								i.Source.Width.IsAbsolute ? i.Source.Width.Amout : 0,
-								i.Source.MinWidth.IsAbsolute ? i.Source.MinWidth.Amout : 0
-							),
-							i.Source.MaxWidth.IsAbsolute ? i.Source.MaxWidth.Amout : double.PositiveInfinity
-						) - i.HorizontalMargins;
-					}
-					else {
-						i.Width = i.Source.Width.Clamp( i.Source.MinWidth, i.Source.MaxWidth, DrawWidth ) - i.HorizontalMargins;
-					}
+					i.Width = i.Source.Width.Clamp( i.Source.MinWidth, i.Source.MaxWidth, lineSize ) - i.HorizontalMargins;
 				}
 			}
+		}
+
+		private double calculateLineSize ( IEnumerable<ItemData> items, bool isHorizontal ) {
+			double targetSize;
+			if ( isHorizontal ) {
+				if ( items.Any( x => x.Source.Height.IsAbsolute ) ) {
+					targetSize = items.Max( X => Math.Max( X.Source.Height.AbsoluteAmout( 0 ), X.Source.MinHeight.AbsoluteAmout( 0 ) ) + X.VerticalMargins );
+				}
+				else {
+					targetSize = LineSize;
+				}
+			}
+			else {
+				if ( items.Any( x => x.Source.Width.IsAbsolute ) ) {
+					targetSize = items.Max( X => Math.Max( X.Source.Width.AbsoluteAmout( 0 ), X.Source.MinWidth.AbsoluteAmout( 0 ) ) + X.HorizontalMargins );
+				}
+				else {
+					targetSize = LineSize;
+				}
+			}
+			targetSize = Math.Min(
+				Math.Max(
+					targetSize,
+					MinLineSize
+				),
+				MaxLineSize
+			);
+			return targetSize;
 		}
 
 		void spaceItems ( double remainingSpace, IEnumerable<ItemData> items ) {
@@ -424,6 +444,11 @@ namespace osu.Framework.Graphics.Containers {
 				? Amout
 				: ( Amout * containerSize );
 		}
+
+		public override string ToString ()
+			=> IsAbsolute
+			? $"{Amout}px"
+			: $"{Amout:##0%}";
 	}
 
 	public static class FlexboxExtensions {
