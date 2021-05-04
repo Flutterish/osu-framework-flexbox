@@ -129,16 +129,17 @@ namespace osu.Framework.Graphics.Containers {
 			}
 		}
 
+		ListPool<ItemData> listPool = new();
 		protected override void Update () {
 			base.Update();
 			bool isHorizontal = Direction is FlexDirection.Row;
 
-			List<List<ItemData>> lines = new();
+			List<IEnumerable<ItemData>> lines = new();
 			if ( Wrap is FlexWrap.NoWrap ) {
-				lines.Add( childData.Values.ToList() );
+				lines.Add( childData.Values );
 			}
 			else {
-				List<ItemData> line = new();
+				List<ItemData> line = listPool.Rent();
 				lines.Add( line );
 				double lineSize = 0;
 				double totalSpace = isHorizontal ? DrawWidth : DrawHeight;
@@ -194,11 +195,15 @@ namespace osu.Framework.Graphics.Containers {
 				offset = freeSpace / 2;
 			}
 			else if ( ContentAlignment is ContentAlignment.SpaceAround ) {
-				gap = freeSpace / ( lines.Count + 1 );
-				offset = gap;
+				gap = freeSpace / lines.Count;
+				offset = gap / 2;
 			}
 			else if ( ContentAlignment is ContentAlignment.SpaceBetween ) {
 				gap = freeSpace / ( lines.Count - 1 );
+			}
+			else if ( ContentAlignment is ContentAlignment.SpaceEvenly ) {
+				gap = freeSpace / ( lines.Count + 1 );
+				offset = gap;
 			}
 
 			foreach ( var _line in lines ) {
@@ -212,6 +217,8 @@ namespace osu.Framework.Graphics.Containers {
 				}
 				lineCount++;
 			}
+
+			listPool.ReturnAll();
 		}
 
 		void spaceLine ( IEnumerable<ItemData> items, double lineOffset ) {
@@ -576,6 +583,7 @@ namespace osu.Framework.Graphics.Containers {
 		Centre,
 		SpaceBetween,
 		SpaceAround,
+		SpaceEvenly
 		// TODO Stretch
 	}
 
@@ -610,5 +618,23 @@ namespace osu.Framework.Graphics.Containers {
 		/// Stretch the items to 100% line size. This will ignore their cross-axis size limits
 		/// </summary>
 		Stretch
+	}
+
+	internal class ListPool<T> {
+		List<List<T>> lists = new();
+		int current;
+
+		public List<T> Rent () {
+			if ( lists.Count <= current ) {
+				lists.Add( new() );
+			}
+			var next = lists[ current++ ];
+			next.Clear();
+			return next;
+		}
+
+		public void ReturnAll () {
+			current = 0;
+		}
 	}
 }

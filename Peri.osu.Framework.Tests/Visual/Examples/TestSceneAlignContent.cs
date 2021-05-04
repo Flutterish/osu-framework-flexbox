@@ -19,7 +19,7 @@ namespace osu.Framework.Tests.Visual.Examples {
 
 			AddLabel( "Flexbox" );
 			AddSliderStep( "Width", 0, 1000, 500, v => flexbox.Width = v );
-			AddSliderStep( "Content alignment", 0, 4, 0, v => flexbox.ContentAlignment = (ContentAlignment)v );
+			AddSliderStep( "Content alignment", 0, 5, 0, v => flexbox.ContentAlignment = (ContentAlignment)v );
 			foreach ( var (e, i) in Enum.GetValues<ContentAlignment>().Zip( Enumerable.Range( 0, Enum.GetValues<ContentAlignment>().Count() ) ) ) {
 				AddLabel( $"{i}: {e}" );
 			}
